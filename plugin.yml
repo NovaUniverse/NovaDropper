@@ -1,0 +1,6 @@
+name: Dropper
+main: net.novauniverse.games.dropper.NovaDropper
+description: Novauniverse Dropper
+version: 1.0
+depend: [NovaCore, NovaCoreGameEngine]
+softdepend: [NovaGamesTarget]
