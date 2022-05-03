@@ -348,6 +348,8 @@ public class Dropper extends MapGame implements Listener {
 
 		ended = true;
 
+		Bukkit.getServer().getOnlinePlayers().forEach(player -> player.setGameMode(GameMode.SPECTATOR));
+
 		if (reason != GameEndReason.OPERATOR_ENDED_GAME) {
 			List<Entry<UUID, Integer>> list = new ArrayList<>(dropperScore.entrySet());
 			list.sort(Entry.comparingByValue());
@@ -493,8 +495,8 @@ public class Dropper extends MapGame implements Listener {
 			player.setGameMode(GameMode.SPECTATOR);
 			player.teleport(map.getSpectatorLocation(), TeleportCause.PLUGIN);
 		}
-		
-		if(map.isNightVision()) {
+
+		if (map.isNightVision()) {
 			player.addPotionEffect(new PotionEffect(PotionEffectType.NIGHT_VISION, 100000, 0, false, false));
 		}
 	}
@@ -519,7 +521,7 @@ public class Dropper extends MapGame implements Listener {
 		}
 		this.deaths.put(player.getUniqueId(), deaths);
 
-		if(NovaCore.getInstance().getVersionIndependentUtils().getNovaCoreGameVersion().isAfterOrEqual(NovaCoreGameVersion.V_1_16)) {
+		if (NovaCore.getInstance().getVersionIndependentUtils().getNovaCoreGameVersion().isAfterOrEqual(NovaCoreGameVersion.V_1_16)) {
 			new BukkitRunnable() {
 				@Override
 				public void run() {
