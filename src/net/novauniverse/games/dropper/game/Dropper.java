@@ -82,6 +82,7 @@ public class Dropper extends MapGame implements Listener {
 		this.activeChunkLocation = null;
 
 		this.dropperScore = new HashMap<>();
+		this.deaths = new HashMap<>();
 
 		this.countdownTask = new SimpleTask(plugin, new Runnable() {
 			@Override
@@ -375,7 +376,7 @@ public class Dropper extends MapGame implements Listener {
 				OfflinePlayer player = Bukkit.getServer().getOfflinePlayer(entry.getKey());
 				name = player.getName();
 			}
-			Bukkit.getServer().broadcastMessage(ChatColor.LIGHT_PURPLE + "" + ChatColor.BOLD + TextUtils.ordinal(i + 1) + " place: " + color + ChatColor.BOLD + name + " with " + entry.getValue() + " points");
+			Bukkit.getServer().broadcastMessage(ChatColor.LIGHT_PURPLE + "" + ChatColor.BOLD + TextUtils.ordinal(i + 1) + " place: " + color + ChatColor.BOLD + name + ChatColor.AQUA + ChatColor.BOLD + " with " + entry.getValue() + " points");
 		}
 
 		Task.tryStopTask(checkTask);
