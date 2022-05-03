@@ -89,13 +89,12 @@ public class Dropper extends MapGame implements Listener {
 								VersionIndependantUtils.get().sendTitle(player, ChatColor.RED + "Failed", ChatColor.RED + "time's up", 10, 60, 10);
 							}
 						});
-						remainingPlayers.clear();
 
 						Bukkit.getServer().getOnlinePlayers().forEach(player -> {
 							player.setGameMode(GameMode.SPECTATOR);
 							Bukkit.getServer().getOnlinePlayers().forEach(player2 -> {
 								if (player2 != player) {
-									player.hidePlayer(player2);
+									player.showPlayer(player2);
 								}
 							});
 						});
@@ -119,6 +118,12 @@ public class Dropper extends MapGame implements Listener {
 				if (maps.size() > 0) {
 					DropperMap map = maps.get(0);
 					// TODO: Spectator tp task
+
+					Bukkit.getServer().getOnlinePlayers().forEach(player -> {
+						if (player.getGameMode() == GameMode.SPECTATOR) {
+
+						}
+					});
 
 					if (timeLeft > 0) {
 						List<UUID> toRemove = new ArrayList<>();
@@ -291,6 +296,8 @@ public class Dropper extends MapGame implements Listener {
 				Bukkit.getServer().broadcastMessage(ChatColor.RED + "" + ChatColor.BOLD + "Failed> " + color + ChatColor.BOLD + player.getName() + ChatColor.RED + ChatColor.BOLD + " did not complete the level in time");
 			}
 		});
+
+		remainingPlayers.clear();
 
 		if (maps.size() <= 1) {
 			Bukkit.getServer().broadcastMessage(ChatColor.GREEN + "Game Over. No more rounds remaining");
