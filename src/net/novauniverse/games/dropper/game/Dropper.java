@@ -2,12 +2,17 @@ package net.novauniverse.games.dropper.game;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.UUID;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Difficulty;
 import org.bukkit.GameMode;
+import org.bukkit.Location;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -59,6 +64,9 @@ public class Dropper extends MapGame implements Listener {
 
 	private XYLocation activeChunkLocation;
 
+	private Map<UUID, Integer> dropperScore;
+	private Map<UUID, Integer> deaths;
+
 	public Dropper(Plugin plugin) {
 		super(plugin);
 
@@ -72,6 +80,8 @@ public class Dropper extends MapGame implements Listener {
 		this.timeLeft = -1;
 
 		this.activeChunkLocation = null;
+
+		this.dropperScore = new HashMap<>();
 
 		this.countdownTask = new SimpleTask(plugin, new Runnable() {
 			@Override
@@ -121,7 +131,36 @@ public class Dropper extends MapGame implements Listener {
 
 					Bukkit.getServer().getOnlinePlayers().forEach(player -> {
 						if (player.getGameMode() == GameMode.SPECTATOR) {
+							Location location = player.getLocation();
 
+							boolean shouldTp = false;
+							double x = location.getX();
+							double z = location.getZ();
+
+							if (x < map.getArea().getPosition1().getX()) {
+								x = map.getArea().getPosition1().getX();
+								shouldTp = true;
+							}
+
+							if (x > map.getArea().getPosition2().getX()) {
+								x = map.getArea().getPosition2().getX();
+								shouldTp = true;
+							}
+
+							if (z < map.getArea().getPosition1().getZ()) {
+								z = map.getArea().getPosition1().getZ();
+								shouldTp = true;
+							}
+
+							if (z > map.getArea().getPosition2().getZ()) {
+								z = map.getArea().getPosition2().getZ();
+								shouldTp = true;
+							}
+
+							if (shouldTp) {
+								Location target = new Location(location.getWorld(), x, location.getY(), z, location.getYaw(), location.getPitch());
+								player.teleport(target);
+							}
 						}
 					});
 
@@ -153,6 +192,24 @@ public class Dropper extends MapGame implements Listener {
 							DropperPlayerCompleteRoundEvent event = new DropperPlayerCompleteRoundEvent(player, remainingPlayers.size(), players.size(), placement);
 							Bukkit.getServer().getPluginManager().callEvent(event);
 
+							UUID scoreTargetUUID = uuid;
+							if (NovaCore.getInstance().hasTeamManager()) {
+								Team team = TeamManager.getTeamManager().getPlayerTeam(uuid);
+								if (team == null) {
+									scoreTargetUUID = null;
+								} else {
+									scoreTargetUUID = team.getTeamUuid();
+								}
+							}
+
+							if (scoreTargetUUID != null) {
+								Integer score = remainingPlayers.size() + 1;
+								if (dropperScore.containsKey(scoreTargetUUID)) {
+									score += dropperScore.get(scoreTargetUUID);
+								}
+								dropperScore.put(scoreTargetUUID, score);
+							}
+
 							teleportPlayer(player);
 							VersionIndependantSound.ORB_PICKUP.play(player);
 							VersionIndependantUtils.get().sendTitle(player, ChatColor.GREEN + "Completed", ChatColor.GREEN + TextUtils.ordinal(placement) + " place", 10, 60, 10);
@@ -167,6 +224,10 @@ public class Dropper extends MapGame implements Listener {
 				}
 			}
 		}, 4L);
+	}
+
+	public Map<UUID, Integer> getDropperScore() {
+		return dropperScore;
 	}
 
 	@Override
@@ -249,7 +310,17 @@ public class Dropper extends MapGame implements Listener {
 		activeChunkLocation = new XYLocation(map.getSpawnLocation().getChunk().getX(), map.getSpawnLocation().getChunk().getZ());
 		map.getSpawnLocation().getChunk().load();
 
-		players.forEach(uuid -> remainingPlayers.add(uuid));
+		players.forEach(uuid -> {
+			remainingPlayers.add(uuid);
+
+			if (!NovaCore.getInstance().hasTeamManager()) {
+				dropperScore.put(uuid, 0);
+			}
+		});
+
+		if (NovaCore.getInstance().hasTeamManager()) {
+			TeamManager.getTeamManager().getTeams().forEach(team -> dropperScore.put(team.getTeamUuid(), 0));
+		}
 
 		if (config.isShuffleOrder()) {
 			Collections.shuffle(maps, random);
@@ -271,12 +342,55 @@ public class Dropper extends MapGame implements Listener {
 
 		ended = true;
 
+		List<Entry<UUID, Integer>> list = new ArrayList<>(dropperScore.entrySet());
+		list.sort(Entry.comparingByValue());
+		Collections.reverse(list);
+
+		int maxEntries = 5;
+		int max = (list.size() > maxEntries) ? maxEntries : list.size();
+		Bukkit.getServer().broadcastMessage(ChatColor.GREEN + "" + ChatColor.BOLD + "-- Top " + max + (TeamManager.hasTeamManager() ? " teams" : " players") + " --");
+
+		for (int i = 0; i < list.size(); i++) {
+			Entry<UUID, Integer> entry = list.get(i);
+			String name = "your mom";
+			if (TeamManager.hasTeamManager()) {
+				Team team = TeamManager.getTeamManager().getTeamByTeamUUID(entry.getKey());
+				name = team.getDisplayName();
+			} else {
+				OfflinePlayer player = Bukkit.getServer().getOfflinePlayer(entry.getKey());
+				name = player.getName();
+			}
+			Log.debug("Placement", (i + 1) + ": " + name + " Score: " + entry.getValue());
+		}
+
+		for (int i = 0; i < max; i++) {
+			Entry<UUID, Integer> entry = list.get(i);
+			String name = "your mom";
+			ChatColor color = ChatColor.AQUA;
+			if (TeamManager.hasTeamManager()) {
+				Team team = TeamManager.getTeamManager().getTeamByTeamUUID(entry.getKey());
+				name = team.getDisplayName();
+				color = team.getTeamColor();
+			} else {
+				OfflinePlayer player = Bukkit.getServer().getOfflinePlayer(entry.getKey());
+				name = player.getName();
+			}
+			Bukkit.getServer().broadcastMessage(ChatColor.LIGHT_PURPLE + "" + ChatColor.BOLD + TextUtils.ordinal(i + 1) + " place: " + color + ChatColor.BOLD + name + " with " + entry.getValue() + " points");
+		}
+
 		Task.tryStopTask(checkTask);
 		Task.tryStopTask(countdownTask);
 	}
 
 	public int getTimeLeft() {
 		return timeLeft;
+	}
+
+	public int getDeaths(UUID uuid) {
+		if (deaths.containsKey(uuid)) {
+			return deaths.get(uuid);
+		}
+		return 0;
 	}
 
 	public void beginNextRoundWait() {
@@ -380,19 +494,29 @@ public class Dropper extends MapGame implements Listener {
 
 	@EventHandler(priority = EventPriority.NORMAL)
 	public void onPlayerDeath(PlayerDeathEvent e) {
-		e.getEntity().spigot().respawn();
+		Player player = e.getEntity();
+		Integer deaths = 1;
+		if (this.deaths.containsKey(player.getUniqueId())) {
+			deaths += this.deaths.get(player.getUniqueId());
+		}
+		this.deaths.put(player.getUniqueId(), deaths);
+
+		player.spigot().respawn();
 	}
 
 	@EventHandler(priority = EventPriority.NORMAL)
 	public void onPlayerJoin(PlayerJoinEvent e) {
+		Player player = e.getPlayer();
 		if (started) {
-			Player player = e.getPlayer();
-			teleportPlayer(player);
+			this.teleportPlayer(player);
+		} else {
+			player.sendMessage(ChatColor.GREEN + "For the best experience turn off clouds");
+			VersionIndependantUtils.get().sendTitle(player, "", ChatColor.GREEN + "For the best experience turn off clouds", 10, 100, 20);
 		}
 	}
 
 	@EventHandler(priority = EventPriority.NORMAL)
-	public void onPlayerJoin(PlayerRespawnEvent e) {
+	public void onPlayerRespawn(PlayerRespawnEvent e) {
 		if (started) {
 			e.setRespawnLocation(getWorld().getSpawnLocation());
 		}
@@ -409,5 +533,4 @@ public class Dropper extends MapGame implements Listener {
 			}.runTaskLater(NovaDropper.getInstance(), 1L);
 		}
 	}
-
 }
