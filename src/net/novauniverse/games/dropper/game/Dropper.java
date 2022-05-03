@@ -345,46 +345,48 @@ public class Dropper extends MapGame implements Listener {
 
 		ended = true;
 
-		List<Entry<UUID, Integer>> list = new ArrayList<>(dropperScore.entrySet());
-		list.sort(Entry.comparingByValue());
-		Collections.reverse(list);
+		if (reason != GameEndReason.OPERATOR_ENDED_GAME) {
+			List<Entry<UUID, Integer>> list = new ArrayList<>(dropperScore.entrySet());
+			list.sort(Entry.comparingByValue());
+			Collections.reverse(list);
 
-		int maxEntries = 5;
-		int max = (list.size() > maxEntries) ? maxEntries : list.size();
-		Bukkit.getServer().broadcastMessage(ChatColor.GREEN + "" + ChatColor.BOLD + "-- Top " + max + (TeamManager.hasTeamManager() ? " teams" : " players") + " --");
+			int maxEntries = 5;
+			int max = (list.size() > maxEntries) ? maxEntries : list.size();
+			Bukkit.getServer().broadcastMessage(ChatColor.GREEN + "" + ChatColor.BOLD + "-- Top " + max + (TeamManager.hasTeamManager() ? " teams" : " players") + " --");
 
-		for (int i = 0; i < list.size(); i++) {
-			Entry<UUID, Integer> entry = list.get(i);
-			String name = "your mom";
-			PlacementType type = PlacementType.PLAYER;
+			for (int i = 0; i < list.size(); i++) {
+				Entry<UUID, Integer> entry = list.get(i);
+				String name = "your mom";
+				PlacementType type = PlacementType.PLAYER;
 
-			if (TeamManager.hasTeamManager()) {
-				Team team = TeamManager.getTeamManager().getTeamByTeamUUID(entry.getKey());
-				name = team.getDisplayName();
-				type = PlacementType.TEAM;
-			} else {
-				OfflinePlayer player = Bukkit.getServer().getOfflinePlayer(entry.getKey());
-				name = player.getName();
+				if (TeamManager.hasTeamManager()) {
+					Team team = TeamManager.getTeamManager().getTeamByTeamUUID(entry.getKey());
+					name = team.getDisplayName();
+					type = PlacementType.TEAM;
+				} else {
+					OfflinePlayer player = Bukkit.getServer().getOfflinePlayer(entry.getKey());
+					name = player.getName();
+				}
+				Log.debug("Placement", (i + 1) + ": " + name + " Score: " + entry.getValue());
+
+				DropperPlacementEvent event = new DropperPlacementEvent(entry.getKey(), type, i + 1, entry.getValue());
+				Bukkit.getServer().getPluginManager().callEvent(event);
 			}
-			Log.debug("Placement", (i + 1) + ": " + name + " Score: " + entry.getValue());
 
-			DropperPlacementEvent event = new DropperPlacementEvent(entry.getKey(), type, i + 1, entry.getValue());
-			Bukkit.getServer().getPluginManager().callEvent(event);
-		}
-
-		for (int i = 0; i < max; i++) {
-			Entry<UUID, Integer> entry = list.get(i);
-			String name = "your mom";
-			ChatColor color = ChatColor.AQUA;
-			if (TeamManager.hasTeamManager()) {
-				Team team = TeamManager.getTeamManager().getTeamByTeamUUID(entry.getKey());
-				name = team.getDisplayName();
-				color = team.getTeamColor();
-			} else {
-				OfflinePlayer player = Bukkit.getServer().getOfflinePlayer(entry.getKey());
-				name = player.getName();
+			for (int i = 0; i < max; i++) {
+				Entry<UUID, Integer> entry = list.get(i);
+				String name = "your mom";
+				ChatColor color = ChatColor.AQUA;
+				if (TeamManager.hasTeamManager()) {
+					Team team = TeamManager.getTeamManager().getTeamByTeamUUID(entry.getKey());
+					name = team.getDisplayName();
+					color = team.getTeamColor();
+				} else {
+					OfflinePlayer player = Bukkit.getServer().getOfflinePlayer(entry.getKey());
+					name = player.getName();
+				}
+				Bukkit.getServer().broadcastMessage(ChatColor.LIGHT_PURPLE + "" + ChatColor.BOLD + TextUtils.ordinal(i + 1) + " place: " + color + ChatColor.BOLD + name + ChatColor.AQUA + ChatColor.BOLD + " with " + entry.getValue() + " points");
 			}
-			Bukkit.getServer().broadcastMessage(ChatColor.LIGHT_PURPLE + "" + ChatColor.BOLD + TextUtils.ordinal(i + 1) + " place: " + color + ChatColor.BOLD + name + ChatColor.AQUA + ChatColor.BOLD + " with " + entry.getValue() + " points");
 		}
 
 		Task.tryStopTask(checkTask);
