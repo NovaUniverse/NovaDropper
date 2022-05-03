@@ -30,9 +30,11 @@ import net.md_5.bungee.api.ChatColor;
 import net.novauniverse.games.dropper.NovaDropper;
 import net.novauniverse.games.dropper.game.config.DropperConfig;
 import net.novauniverse.games.dropper.game.config.DropperMap;
+import net.novauniverse.games.dropper.game.event.DropperPlacementEvent;
 import net.novauniverse.games.dropper.game.event.DropperPlayerCompleteRoundEvent;
 import net.novauniverse.games.dropper.game.event.DropperPlayerFailRoundEvent;
 import net.novauniverse.games.dropper.game.event.DropperRoundEndEvent;
+import net.novauniverse.games.dropper.game.event.PlacementType;
 import net.zeeraa.novacore.commons.log.Log;
 import net.zeeraa.novacore.commons.tasks.Task;
 import net.zeeraa.novacore.commons.utils.TextUtils;
@@ -354,14 +356,20 @@ public class Dropper extends MapGame implements Listener {
 		for (int i = 0; i < list.size(); i++) {
 			Entry<UUID, Integer> entry = list.get(i);
 			String name = "your mom";
+			PlacementType type = PlacementType.PLAYER;
+
 			if (TeamManager.hasTeamManager()) {
 				Team team = TeamManager.getTeamManager().getTeamByTeamUUID(entry.getKey());
 				name = team.getDisplayName();
+				type = PlacementType.TEAM;
 			} else {
 				OfflinePlayer player = Bukkit.getServer().getOfflinePlayer(entry.getKey());
 				name = player.getName();
 			}
 			Log.debug("Placement", (i + 1) + ": " + name + " Score: " + entry.getValue());
+
+			DropperPlacementEvent event = new DropperPlacementEvent(entry.getKey(), type, i + 1, entry.getValue());
+			Bukkit.getServer().getPluginManager().callEvent(event);
 		}
 
 		for (int i = 0; i < max; i++) {
