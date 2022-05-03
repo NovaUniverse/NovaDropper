@@ -24,6 +24,8 @@ import org.bukkit.event.player.PlayerRespawnEvent;
 import org.bukkit.event.player.PlayerTeleportEvent.TeleportCause;
 import org.bukkit.event.world.ChunkUnloadEvent;
 import org.bukkit.plugin.Plugin;
+import org.bukkit.potion.PotionEffect;
+import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
 
 import net.md_5.bungee.api.ChatColor;
@@ -40,6 +42,7 @@ import net.zeeraa.novacore.commons.tasks.Task;
 import net.zeeraa.novacore.commons.utils.TextUtils;
 import net.zeeraa.novacore.spigot.NovaCore;
 import net.zeeraa.novacore.spigot.abstraction.VersionIndependantUtils;
+import net.zeeraa.novacore.spigot.abstraction.enums.NovaCoreGameVersion;
 import net.zeeraa.novacore.spigot.abstraction.enums.VersionIndependantSound;
 import net.zeeraa.novacore.spigot.gameengine.module.modules.game.GameEndReason;
 import net.zeeraa.novacore.spigot.gameengine.module.modules.game.MapGame;
@@ -490,6 +493,10 @@ public class Dropper extends MapGame implements Listener {
 			player.setGameMode(GameMode.SPECTATOR);
 			player.teleport(map.getSpectatorLocation(), TeleportCause.PLUGIN);
 		}
+		
+		if(map.isNightVision()) {
+			player.addPotionEffect(new PotionEffect(PotionEffectType.NIGHT_VISION, 100000, 0, false, false));
+		}
 	}
 
 	@EventHandler(priority = EventPriority.NORMAL)
@@ -512,7 +519,16 @@ public class Dropper extends MapGame implements Listener {
 		}
 		this.deaths.put(player.getUniqueId(), deaths);
 
-		player.spigot().respawn();
+		if(NovaCore.getInstance().getVersionIndependentUtils().getNovaCoreGameVersion().isAfterOrEqual(NovaCoreGameVersion.V_1_16)) {
+			new BukkitRunnable() {
+				@Override
+				public void run() {
+					player.spigot().respawn();
+				}
+			}.runTaskLater(getPlugin(), 5L);
+		} else {
+			player.spigot().respawn();
+		}
 	}
 
 	@EventHandler(priority = EventPriority.NORMAL)

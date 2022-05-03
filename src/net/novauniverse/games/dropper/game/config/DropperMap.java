@@ -14,14 +14,17 @@ public class DropperMap {
 
 	private int health;
 	private int time;
+	
+	private boolean nightVision;
 
-	public DropperMap(VectorArea area, VectorArea completeArea, Location spawnLocation, Location spectatorLocation, int health, int time) {
+	public DropperMap(VectorArea area, VectorArea completeArea, Location spawnLocation, Location spectatorLocation, int health, int time, boolean nightVision) {
 		this.area = area;
 		this.completeArea = completeArea;
 		this.spawnLocation = spawnLocation;
 		this.spectatorLocation = spectatorLocation;
 		this.health = health;
 		this.time = time;
+		this.nightVision = nightVision;
 	}
 
 	public void setupWorld(World world) {
@@ -51,5 +54,9 @@ public class DropperMap {
 	
 	public int getTime() {
 		return time;
+	}
+	
+	public boolean isNightVision() {
+		return nightVision;
 	}
 }

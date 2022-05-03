@@ -45,8 +45,13 @@ public class DropperConfig extends MapModule {
 			if (map.has("time")) {
 				time = map.getInt("time");
 			}
+			
+			boolean nightVision = false;
+			if(map.has("night_vision")) {
+				nightVision = map.getBoolean("night_vision");
+			}
 
-			DropperMap dropperMap = new DropperMap(area, completeArea, spawnLocation, spectatorLocation, health, time);
+			DropperMap dropperMap = new DropperMap(area, completeArea, spawnLocation, spectatorLocation, health, time, nightVision);
 			this.maps.add(dropperMap);
 		}
 
