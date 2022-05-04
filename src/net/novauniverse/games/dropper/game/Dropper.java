@@ -332,6 +332,8 @@ public class Dropper extends MapGame implements Listener {
 			Collections.shuffle(maps, random);
 		}
 
+		world.setSpawnLocation(map.getSpawnLocation().getBlockX(), map.getSpawnLocation().getBlockY(), map.getSpawnLocation().getBlockZ());
+
 		Bukkit.getServer().getOnlinePlayers().forEach(player -> teleportPlayer(player));
 
 		Task.tryStartTask(checkTask);
@@ -443,6 +445,7 @@ public class Dropper extends MapGame implements Listener {
 				DropperMap map = maps.get(0);
 				activeChunkLocation = new XYLocation(map.getSpawnLocation().getChunk().getX(), map.getSpawnLocation().getChunk().getZ());
 				map.getSpawnLocation().getChunk().load();
+				world.setSpawnLocation(map.getSpawnLocation().getBlockX(), map.getSpawnLocation().getBlockY(), map.getSpawnLocation().getBlockZ());
 				players.forEach(uuid -> remainingPlayers.add(uuid));
 				timeLeft = map.getTime();
 				Bukkit.getServer().getOnlinePlayers().forEach(player -> teleportPlayer(player));
@@ -547,7 +550,14 @@ public class Dropper extends MapGame implements Listener {
 	@EventHandler(priority = EventPriority.NORMAL)
 	public void onPlayerRespawn(PlayerRespawnEvent e) {
 		if (started) {
-			e.setRespawnLocation(getWorld().getSpawnLocation());
+			Location location = getWorld().getSpawnLocation();
+
+			if (maps.size() > 0) {
+				DropperMap map = maps.get(0);
+				location = map.getSpawnLocation();
+			}
+
+			e.setRespawnLocation(location);
 		}
 	}
 
