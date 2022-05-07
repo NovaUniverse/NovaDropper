@@ -231,6 +231,10 @@ public class Dropper extends MapGame implements Listener {
 			}
 		}, 4L);
 	}
+	
+	public List<DropperMap> getMaps() {
+		return maps;
+	}
 
 	public Map<UUID, Integer> getDropperScore() {
 		return dropperScore;
@@ -286,6 +290,10 @@ public class Dropper extends MapGame implements Listener {
 		return false;
 	}
 
+	public List<UUID> getRemainingPlayers() {
+		return remainingPlayers;
+	}
+	
 	@Override
 	public void onStart() {
 		if (started) {
