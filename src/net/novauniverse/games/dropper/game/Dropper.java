@@ -13,6 +13,7 @@ import org.bukkit.Difficulty;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.OfflinePlayer;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -46,6 +47,7 @@ import net.zeeraa.novacore.spigot.abstraction.enums.NovaCoreGameVersion;
 import net.zeeraa.novacore.spigot.abstraction.enums.VersionIndependantSound;
 import net.zeeraa.novacore.spigot.gameengine.module.modules.game.GameEndReason;
 import net.zeeraa.novacore.spigot.gameengine.module.modules.game.MapGame;
+import net.zeeraa.novacore.spigot.gameengine.module.modules.game.elimination.PlayerEliminationReason;
 import net.zeeraa.novacore.spigot.gameengine.module.modules.game.elimination.PlayerQuitEliminationAction;
 import net.zeeraa.novacore.spigot.tasks.SimpleTask;
 import net.zeeraa.novacore.spigot.teams.Team;
@@ -252,7 +254,7 @@ public class Dropper extends MapGame implements Listener {
 
 	@Override
 	public PlayerQuitEliminationAction getPlayerQuitEliminationAction() {
-		return PlayerQuitEliminationAction.NONE;
+		return PlayerQuitEliminationAction.DELAYED;
 	}
 
 	@Override
@@ -292,6 +294,13 @@ public class Dropper extends MapGame implements Listener {
 
 	public List<UUID> getRemainingPlayers() {
 		return remainingPlayers;
+	}
+	
+	@Override
+	public void onPlayerEliminated(OfflinePlayer player, Entity killer, PlayerEliminationReason reason, int placement) {
+		if(remainingPlayers.contains(player.getUniqueId())) {
+			remainingPlayers.remove(player.getUniqueId());
+		}
 	}
 	
 	@Override
