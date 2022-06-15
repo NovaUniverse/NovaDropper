@@ -9,6 +9,7 @@ import java.util.Map.Entry;
 import java.util.UUID;
 
 import org.bukkit.Bukkit;
+import org.bukkit.Chunk;
 import org.bukkit.Difficulty;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
@@ -42,6 +43,7 @@ import net.zeeraa.novacore.commons.log.Log;
 import net.zeeraa.novacore.commons.tasks.Task;
 import net.zeeraa.novacore.commons.utils.TextUtils;
 import net.zeeraa.novacore.spigot.NovaCore;
+import net.zeeraa.novacore.spigot.abstraction.ChunkLoader;
 import net.zeeraa.novacore.spigot.abstraction.VersionIndependentUtils;
 import net.zeeraa.novacore.spigot.abstraction.enums.NovaCoreGameVersion;
 import net.zeeraa.novacore.spigot.abstraction.enums.VersionIndependentSound;
@@ -69,7 +71,8 @@ public class Dropper extends MapGame implements Listener {
 	private Task countdownTask;
 	private Task checkTask;
 
-	private XYLocation activeChunkLocation;
+	// private XYLocation activeChunkLocation;
+	private Chunk forceLoadedChunk;
 
 	private Map<UUID, Integer> dropperScore;
 	private Map<UUID, Integer> deaths;
@@ -86,7 +89,7 @@ public class Dropper extends MapGame implements Listener {
 
 		this.timeLeft = -1;
 
-		this.activeChunkLocation = null;
+		// this.activeChunkLocation = null;
 
 		this.dropperScore = new HashMap<>();
 		this.deaths = new HashMap<>();
@@ -233,7 +236,7 @@ public class Dropper extends MapGame implements Listener {
 			}
 		}, 4L);
 	}
-	
+
 	public List<DropperMap> getMaps() {
 		return maps;
 	}
@@ -295,14 +298,14 @@ public class Dropper extends MapGame implements Listener {
 	public List<UUID> getRemainingPlayers() {
 		return remainingPlayers;
 	}
-	
+
 	@Override
 	public void onPlayerEliminated(OfflinePlayer player, Entity killer, PlayerEliminationReason reason, int placement) {
-		if(remainingPlayers.contains(player.getUniqueId())) {
+		if (remainingPlayers.contains(player.getUniqueId())) {
 			remainingPlayers.remove(player.getUniqueId());
 		}
 	}
-	
+
 	@Override
 	public void onStart() {
 		if (started) {
@@ -330,7 +333,9 @@ public class Dropper extends MapGame implements Listener {
 		DropperMap map = maps.get(0);
 
 		timeLeft = map.getTime();
-		activeChunkLocation = new XYLocation(map.getSpawnLocation().getChunk().getX(), map.getSpawnLocation().getChunk().getZ());
+
+		forceLoadedChunk = new XYLocation(map.getSpawnLocation().getChunk().getX(), map.getSpawnLocation().getChunk().getZ()).getChunk(getWorld());
+		VersionIndependentUtils.get().getChunkLoader().add(forceLoadedChunk);
 		map.getSpawnLocation().getChunk().load();
 
 		players.forEach(uuid -> {
@@ -460,7 +465,11 @@ public class Dropper extends MapGame implements Listener {
 			public void run() {
 				maps.remove(0);
 				DropperMap map = maps.get(0);
-				activeChunkLocation = new XYLocation(map.getSpawnLocation().getChunk().getX(), map.getSpawnLocation().getChunk().getZ());
+				if (forceLoadedChunk != null) {
+					ChunkLoader.getInstance().remove(forceLoadedChunk);
+				}
+				forceLoadedChunk = new XYLocation(map.getSpawnLocation().getChunk().getX(), map.getSpawnLocation().getChunk().getZ()).getChunk(world);
+				ChunkLoader.getInstance().add(forceLoadedChunk);
 				map.getSpawnLocation().getChunk().load();
 				world.setSpawnLocation(map.getSpawnLocation().getBlockX(), map.getSpawnLocation().getBlockY(), map.getSpawnLocation().getBlockZ());
 				players.forEach(uuid -> remainingPlayers.add(uuid));
@@ -521,16 +530,13 @@ public class Dropper extends MapGame implements Listener {
 		}
 	}
 
-	@EventHandler(priority = EventPriority.NORMAL)
-	public void onChunkUnload(ChunkUnloadEvent e) {
-		if (!ended) {
-			if (activeChunkLocation != null) {
-				if (e.getChunk().getX() == activeChunkLocation.getX() && e.getChunk().getZ() == activeChunkLocation.getY()) {
-					e.setCancelled(true);
-				}
-			}
-		}
-	}
+	/*
+	 * @EventHandler(priority = EventPriority.NORMAL) public void
+	 * onChunkUnload(ChunkUnloadEvent e) { if (!ended) { if (activeChunkLocation !=
+	 * null) { if (e.getChunk().getX() == activeChunkLocation.getX() &&
+	 * e.getChunk().getZ() == activeChunkLocation.getY()) { e.setCancelled(true); }
+	 * } } }
+	 */
 
 	@EventHandler(priority = EventPriority.NORMAL)
 	public void onPlayerDeath(PlayerDeathEvent e) {
